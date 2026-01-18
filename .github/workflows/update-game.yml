@@ -2,7 +2,7 @@ name: Check and Package Game Update
 
 on:
   schedule:
-    - cron: '0 */2 * * *' # Run every 2 hours
+    - cron: '0 */1 * * *' # Run every hours
   workflow_dispatch:
     inputs:
       force_version:
