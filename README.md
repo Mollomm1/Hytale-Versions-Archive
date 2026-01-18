@@ -2,8 +2,8 @@
 
 Personal Hytale Linux and Windows Versions Archive from first release to current one including pre-release channel.
 
-<kbd>[**Browse Releases**](https://github.com/Mollomm1/Hytale-Archive/releases?q=prerelease%3Afalse&expanded=true)</kbd>
-<kbd>[**Browse Pre-Releases**](https://github.com/Mollomm1/Hytale-Archive/releases?q=prerelease%3Atrue&expanded=true)</kbd>
+<kbd>[**Browse Releases**](https://github.com/Mollomm1/Hytale-Versions-Archive/releases?q=prerelease%3Afalse&expanded=true)</kbd>
+<kbd>[**Browse Pre-Releases**](https://github.com/Mollomm1/Hytale-Versions-Archive/releases?q=prerelease%3Atrue&expanded=true)</kbd>
 
 all those .rar files contain a `start.bat` or `start.sh` file to start an offline mode game session, those game directories (including save file and mods) are portable.
 
