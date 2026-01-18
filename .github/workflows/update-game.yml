@@ -1,0 +1,148 @@
+name: Check and Package Game Update
+
+on:
+  schedule:
+    - cron: '0 */2 * * *' # Run every 2 hours
+  workflow_dispatch:
+    inputs:
+      force_version:
+        description: 'Force version'
+        required: false
+        type: string
+      force_type:
+        description: 'Force type'
+        required: false
+        default: ''
+        type: choice
+        options:
+        - ''
+        - release
+        - pre-release
+
+concurrency: 
+  group: game-updater
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  packages: read 
+
+jobs:
+  check-and-release:
+    name: Check ${{ matrix.type }}
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        type: [release, pre-release]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+          
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rar unzip jq
+          pip install requests
+
+      - name: Analyze Existing Releases
+        id: history
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CurrentType: ${{ matrix.type }}
+        run: |
+          # Define tag suffix to look for based on type
+          # Release -> look for simple numbers (isPrerelease=false)
+          # Pre-release -> look for isPrerelease=true
+          
+          IS_PRE="false"
+          if [ "$CurrentType" == "pre-release" ]; then IS_PRE="true"; fi
+
+          # Default version if none found
+          LAST_VER=0
+
+          # Fetch releases
+          JSON_DATA=$(gh release list --limit 100 --json tagName,isPrerelease)
+
+          if [ ! -z "$JSON_DATA" ]; then
+            # Logic:
+            # 1. Select releases matching our type (stable vs pre)
+            # 2. Get tagName
+            # 3. Remove "-pre" suffix if it exists
+            # 4. Remove "v" prefix
+            # 5. Convert to number and find Max
+            
+            CALC_VER=$(echo "$JSON_DATA" | jq -r --argjson ispre $IS_PRE '
+              [
+                .[] | 
+                select(.isPrerelease==$ispre) | 
+                .tagName | 
+                sub("-pre";"") | 
+                sub("v";"") | 
+                tonumber
+              ] | max'
+            )
+            
+            if [ "$CALC_VER" != "null" ]; then LAST_VER=$CALC_VER; fi
+          fi
+
+          echo "Latest known $CurrentType: $LAST_VER"
+          echo "LAST_VER=$LAST_VER" >> "$GITHUB_OUTPUT"
+
+      - name: Check for Updates
+        id: version_check
+        env:
+          MANUAL_VER: ${{ inputs.force_version }}
+          MANUAL_TYPE: ${{ inputs.force_type }}
+          CHECK_TYPE: ${{ matrix.type }}
+          LAST_KNOWN_VER: ${{ steps.history.outputs.LAST_VER }}
+        run: |
+          python3 scripts/check_version.py >> "$GITHUB_OUTPUT"
+
+      - name: Build Game Clients
+        if: steps.version_check.outputs.FOUND == 'true'
+        run: |
+          chmod +x scripts/install.sh
+          ./scripts/install.sh "${{ steps.version_check.outputs.VERSION }}" "${{ steps.version_check.outputs.TYPE }}"
+
+      - name: Package Archives
+        if: steps.version_check.outputs.FOUND == 'true'
+        run: |
+          rar a -r -ep1 "Hytale-linux-amd64.rar" build_linux/*
+          rar a -r -ep1 "Hytale-windows-amd64.rar" build_windows/*
+
+      - name: Generate Tag Name
+        id: tag_gen
+        if: steps.version_check.outputs.FOUND == 'true'
+        run: |
+          VER="${{ steps.version_check.outputs.VERSION }}"
+          TYPE="${{ steps.version_check.outputs.TYPE }}"
+          
+          if [ "$TYPE" == "pre-release" ]; then
+             echo "TAG_NAME=v${VER}-pre" >> "$GITHUB_OUTPUT"
+          else
+             echo "TAG_NAME=v${VER}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        if: steps.version_check.outputs.FOUND == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag_gen.outputs.TAG_NAME }}
+          name: "Hytale v${{ steps.version_check.outputs.VERSION }} (${{ steps.version_check.outputs.TYPE }})"
+          body: |
+            Automated build.
+            **Version:** ${{ steps.version_check.outputs.VERSION }}
+            **Channel:** ${{ steps.version_check.outputs.TYPE }}
+          files: |
+            Hytale-linux-amd64.rar
+            Hytale-windows-amd64.rar
+          draft: false
+          prerelease: ${{ steps.version_check.outputs.TYPE == 'pre-release' }}
