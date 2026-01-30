@@ -109,12 +109,13 @@ def patch_client(client_exe, new_domain, use_http=True):
         print(f"[!] Error during client patching: {e}")
         return False
 
-def auto_patch(game_dir, new_domain="localhost:4478"):
+def auto_patch(game_dir, new_domain="localhost:4478", krakatau_path="./Krakatau"):
     """
     Automatically patch server and client.
     Args:
         game_dir: Root game directory
         new_domain: New domain for the emulator (default: localhost:4478)
+        krakatau_path: Path to Krakatau directory (default: ./Krakatau)
     """
     print(f"[*] Starting auto-patch for domain: {new_domain}")
     
@@ -131,8 +132,6 @@ def auto_patch(game_dir, new_domain="localhost:4478"):
         client_exe = client_exe_linux
     else:
         client_exe = client_exe_windows  # Default to Windows, will error if neither exists
-    
-    krakatau_path = os.path.join(game_dir, "..", "Krakatau")
     
     # Setup Krakatau first
     print("[*] Verifying Krakatau installation...")
@@ -160,12 +159,13 @@ def auto_patch(game_dir, new_domain="localhost:4478"):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: auto_patch.py <game_dir> [new_domain]")
-        print("Example: auto_patch.py ./game localhost:4478")
+        print("Usage: auto_patch.py <game_dir> [new_domain] [krakatau_path]")
+        print("Example: auto_patch.py ./game localhost:4478 ./Krakatau")
         sys.exit(1)
     
     game_dir = sys.argv[1]
     new_domain = sys.argv[2] if len(sys.argv) > 2 else "localhost:4478"
+    krakatau_path = sys.argv[3] if len(sys.argv) > 3 else "./Krakatau"
     
-    if not auto_patch(game_dir, new_domain):
+    if not auto_patch(game_dir, new_domain, krakatau_path):
         sys.exit(1)
