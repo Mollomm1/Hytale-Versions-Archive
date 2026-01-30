@@ -1,4 +1,4 @@
-> i am currently regenerating all the releases, not everything is avilable right now.
+> i am currently implementing a local fake-online server to edit character and do lan play, i deleted all old releases.
 
 # Hytale-Versions-Archive
 
