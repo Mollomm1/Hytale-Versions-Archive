@@ -120,11 +120,17 @@ def auto_patch(game_dir, new_domain="localhost:4478"):
     
     server_jar = os.path.join(game_dir, "data", "Server", "HytaleServer.jar")
     
-    # Determine client executable based on OS
-    if sys.platform == "win32":
-        client_exe = os.path.join(game_dir, "data", "Client", "HytaleClient.exe")
+    # Determine client executable - try both Windows (.exe) and Linux versions
+    client_dir = os.path.join(game_dir, "data", "Client")
+    client_exe_windows = os.path.join(client_dir, "HytaleClient.exe")
+    client_exe_linux = os.path.join(client_dir, "HytaleClient")
+    
+    if os.path.exists(client_exe_windows):
+        client_exe = client_exe_windows
+    elif os.path.exists(client_exe_linux):
+        client_exe = client_exe_linux
     else:
-        client_exe = os.path.join(game_dir, "data", "Client", "HytaleClient")
+        client_exe = client_exe_windows  # Default to Windows, will error if neither exists
     
     krakatau_path = os.path.join(game_dir, "..", "Krakatau")
     
