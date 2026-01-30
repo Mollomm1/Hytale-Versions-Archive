@@ -55,8 +55,21 @@ def process_class_with_krakatau(class_data, filename, old_domain, new_domain, us
             content = content.replace("https://", "http://")
 
             if filename.endswith(JWTVALIDATOR_CLASS_FILENAME):
-                # fix aud validation (just fake it lol)
-                content = content.replace("aload expectedAudience", "ldc \"xxxxxxx\"")
+                # fix aud validation (replace any aload variant immediately
+                # followed by the expectedAudience putfield with an ldc)
+                aud_pattern = (
+                    r'(?m)^(?P<label1>L\d+:\s*)?(?P<indent1>\s*)(?:aload_\d+|aload\s+\d+)\s*\r?\n'
+                    r'(?P<label2>L\d+:\s*)?(?P<indent2>\s*)putfield Field com/hypixel/hytale/server/core/auth/JWTValidator expectedAudience Ljava/lang/String;'
+                )
+                replacement = (
+                    "\\g<label1>\\g<indent1>ldc \"xxxxxxx\"\\n"
+                    "\\g<label2>\\g<indent2>putfield Field com/hypixel/hytale/server/core/auth/JWTValidator expectedAudience Ljava/lang/String;"
+                )
+                new_content, count = re.subn(aud_pattern, replacement, content)
+                if count:
+                    content = new_content
+                else:
+                    print(f"   [Warning] Expected audience putfield pattern not found in {filename}")
 
             # Apply logic injection only to the SessionServiceClient
             if filename.endswith(AUTH_CLASS_FILENAME):
