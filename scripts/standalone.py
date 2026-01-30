@@ -1273,61 +1273,61 @@ def main():
                 new_name = input("Enter new username: ").strip()
                 if new_name:
                     current_username = new_name
-                    elif choice == "2":
-                        uuid_str = generate_uuid(current_username)
-                        sess_tok, id_tok, _ = generate_game_tokens(current_username, uuid_str)
-                        
-                        # Paths relative to current directory
-                        cwd = os.getcwd()
-                        is_windows = os.name == 'nt'
-            
-                        if is_windows:
-                            game_exec = os.path.join(cwd, "game", "data", "Client", "HytaleClient.exe")
-                            java_exec = os.path.join(cwd, "game", "jre", "bin", "java.exe")
-                        else:
-                            game_exec = os.path.join(cwd, "game", "data", "Client", "HytaleClient")
-                            java_exec = os.path.join(cwd, "game", "jre", "bin", "java")
-            
-                        app_dir = os.path.join(cwd, "game", "data")
-                        user_dir = os.path.join(cwd, "UserData")
-                        
-                        if not os.path.exists(user_dir):
-                            os.makedirs(user_dir)
-                        
-                        # Check if files exist (optional but good for debugging)
-                        if not os.path.exists(game_exec):
-                             print(f"WARNING: Game executable not found at {game_exec}")
-                        if not os.path.exists(java_exec):
-                             print(f"WARNING: Java executable not found at {java_exec}")
-                        
-                        # Make executable if needed (Linux only)
-                        if not is_windows:
-                            if os.path.exists(game_exec):
-                                os.chmod(game_exec, 0o755)
-                            if os.path.exists(java_exec):
-                                os.chmod(java_exec, 0o755)
-            
-                        cmd = [
-                            game_exec,
-                            "--app-dir", app_dir,
-                            "--user-dir", user_dir,
-                            "--java-exec", java_exec,
-                            "--auth-mode", "authenticated",
-                            "--uuid", uuid_str,
-                            "--name", current_username,
-                            "--identity-token", id_tok,
-                            "--session-token", sess_tok
-                        ]
-                        
-                        print(f"Launching game (Logs -> {CLIENT_LOG_FILE})...")
-                        try:
-                            # Open log file for the client
-                            with open(CLIENT_LOG_FILE, "w") as log_file:
-                                 # Use Popen to redirect stdout/stderr
-                                 process = subprocess.Popen(cmd, stdout=log_file, stderr=subprocess.STDOUT)
-                                 process.wait() # Wait for game to exit
-                        except Exception as e:
-                            print(f"Error launching game: {e}")
+            elif choice == "2":
+                uuid_str = generate_uuid(current_username)
+                sess_tok, id_tok, _ = generate_game_tokens(current_username, uuid_str)
+                
+                # Paths relative to current directory
+                cwd = os.getcwd()
+                is_windows = os.name == 'nt'
+
+                if is_windows:
+                    game_exec = os.path.join(cwd, "game", "data", "Client", "HytaleClient.exe")
+                    java_exec = os.path.join(cwd, "game", "jre", "bin", "java.exe")
+                else:
+                    game_exec = os.path.join(cwd, "game", "data", "Client", "HytaleClient")
+                    java_exec = os.path.join(cwd, "game", "jre", "bin", "java")
+
+                app_dir = os.path.join(cwd, "game", "data")
+                user_dir = os.path.join(cwd, "UserData")
+                
+                if not os.path.exists(user_dir):
+                    os.makedirs(user_dir)
+                
+                # Check if files exist (optional but good for debugging)
+                if not os.path.exists(game_exec):
+                     print(f"WARNING: Game executable not found at {game_exec}")
+                if not os.path.exists(java_exec):
+                     print(f"WARNING: Java executable not found at {java_exec}")
+                
+                # Make executable if needed (Linux only)
+                if not is_windows:
+                    if os.path.exists(game_exec):
+                        os.chmod(game_exec, 0o755)
+                    if os.path.exists(java_exec):
+                        os.chmod(java_exec, 0o755)
+
+                cmd = [
+                    game_exec,
+                    "--app-dir", app_dir,
+                    "--user-dir", user_dir,
+                    "--java-exec", java_exec,
+                    "--auth-mode", "authenticated",
+                    "--uuid", uuid_str,
+                    "--name", current_username,
+                    "--identity-token", id_tok,
+                    "--session-token", sess_tok
+                ]
+                
+                print(f"Launching game (Logs -> {CLIENT_LOG_FILE})...")
+                try:
+                    # Open log file for the client
+                    with open(CLIENT_LOG_FILE, "w") as log_file:
+                         # Use Popen to redirect stdout/stderr
+                         process = subprocess.Popen(cmd, stdout=log_file, stderr=subprocess.STDOUT)
+                         process.wait() # Wait for game to exit
+                except Exception as e:
+                    print(f"Error launching game: {e}")
             elif choice == "3":
                 break
             else:
