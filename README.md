@@ -1,3 +1,5 @@
+> i am currently regenerating all the releases, not everything is avilable right now.
+
 # Hytale-Versions-Archive
 
 Personal Hytale Linux and Windows Versions Archive from first release to current one including pre-release channel.
