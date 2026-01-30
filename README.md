@@ -1,5 +1,3 @@
-> i am currently implementing a local fake-online server to edit character and do lan play, i deleted all old releases.
-
 # Hytale-Versions-Archive
 
 Personal Hytale Linux and Windows Versions Archive from first release to current one including pre-release channel.
