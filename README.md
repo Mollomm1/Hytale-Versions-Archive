@@ -5,7 +5,7 @@ Personal Hytale Linux and Windows Versions Archive from first release to current
 <kbd>[**Browse Releases**](https://github.com/Mollomm1/Hytale-Versions-Archive/releases?q=prerelease%3Afalse&expanded=true)</kbd>
 <kbd>[**Browse Pre-Releases**](https://github.com/Mollomm1/Hytale-Versions-Archive/releases?q=prerelease%3Atrue&expanded=true)</kbd>
 
-all those .rar files contain a `start.bat` or `start.sh` file to start an offline mode game session, those game directories (including save file and mods) are portable.
+all those .rar files contain a `start.bat` or `start.sh` file to start an fake-offline mode game session, you can edit your character and join lan servers, those game directories (including save file and mods) are portable.
 
 the code and workflow are obviously ai generated.
 

@@ -12,8 +12,9 @@ TARGET_DIRS = [
     "com/hypixel/hytale/server/core/io/handlers/login"
 ]
 
-# The specific class that needs the HTTP/1.1 logic patch
+# specific class that needs the HTTP/1.1 logic patch
 AUTH_CLASS_FILENAME = "SessionServiceClient.class"
+JWTVALIDATOR_CLASS_FILENAME = "JWTValidator.class"
 
 def process_class_with_krakatau(class_data, filename, old_domain, new_domain, use_http, krakatau_path):
     """
@@ -52,6 +53,10 @@ def process_class_with_krakatau(class_data, filename, old_domain, new_domain, us
         if use_http:
             # Change https:// to http:// in all string literals
             content = content.replace("https://", "http://")
+
+            if filename.endswith(JWTVALIDATOR_CLASS_FILENAME):
+                # fix aud validation (just fake it lol)
+                content = content.replace("aload expectedAudience", "ldc \"xxxxxxx\"")
 
             # Apply logic injection only to the SessionServiceClient
             if filename.endswith(AUTH_CLASS_FILENAME):

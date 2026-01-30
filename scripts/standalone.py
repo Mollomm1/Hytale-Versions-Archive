@@ -18,6 +18,21 @@ PORT = 4478
 HOST = "localhost"
 LAUNCHER_DIR = "launcher"
 AVATAR_FILE = os.path.join(LAUNCHER_DIR, "avatar.json")
+ACCOUNT_FILE = os.path.join(LAUNCHER_DIR, "account.json")
+
+def load_username():
+    if os.path.exists(ACCOUNT_FILE):
+        try:
+            with open(ACCOUNT_FILE, 'r') as f:
+                return json.load(f).get("username", "Player")
+        except: pass
+    return "Player"
+
+def save_username(username):
+    with open(ACCOUNT_FILE, 'w') as f:
+        json.dump({"username": username}, f)
+
+current_username = load_username()
 WEB_LOG_FILE = os.path.join(LAUNCHER_DIR, "web_server.log")
 CLIENT_LOG_FILE = os.path.join(LAUNCHER_DIR, "hytale_client.log")
 PRIVATE_KEY_PEM = """-----BEGIN PRIVATE KEY-----
@@ -811,13 +826,16 @@ def generate_uuid(username):
 
 def generate_game_tokens(username, user_uuid, audience="hytale-client", scopes=None, scope="hytale:client"):
     if scopes is None: scopes = ["game.session"]
-    exp = int(time.time()) + 86400
+    
+    # Set iat to 0 and exp to Jan 1st 2030
+    iat = 0
+    exp = 1893456000
     
     session_token = sign_jwt({
         "sub": user_uuid,
         "username": username,
         "iss": ISSUER,
-        "iat": int(time.time()),
+        "iat": iat,
         "exp": exp,
         "scope": scope,
         "ver": "2.0",
@@ -828,7 +846,7 @@ def generate_game_tokens(username, user_uuid, audience="hytale-client", scopes=N
     
     identity_token = sign_jwt({
         "exp": exp,
-        "iat": int(time.time()),
+        "iat": iat,
         "iss": ISSUER,
         "jti": str(uuid.uuid4()),
         "profile": {
@@ -952,14 +970,15 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
         username = data.get("username", "Player")
         user_uuid = generate_uuid(username)
         
-        # Token expires in 6 months
-        exp = int(time.time()) + 15552000
+        # Set iat to 0 and exp to Jan 1st 2030
+        iat = 0
+        exp = 1893456000
         
         token = sign_jwt({
             "sub": user_uuid,
             "username": username,
             "iss": ISSUER,
-            "iat": int(time.time()),
+            "iat": iat,
             "exp": exp,
             "scope": "launcher",
             "ver": "2.0",
@@ -1030,25 +1049,23 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
         }).encode())
 
     def handle_auth_token(self, data):
+        global current_username
         grant = data.get("authorizationGrant")
         fingerprint = data.get("x509Fingerprint")
-        
-        if grant not in GRANT_STORE:
-            self.send_error(401, "Invalid grant")
-            return
             
-        grant_data = GRANT_STORE.pop(grant)
-        user_uuid = grant_data["uuid"]
-        audience = grant_data["aud"]
-        username = grant_data.get("username", "Player")
+        user_uuid = generate_uuid(current_username)
+        audience = "xxxxxxx"
+        username = current_username
         
-        exp = int(time.time()) + 86400
+        # Set iat to 0 and exp to Jan 1st 2030
+        iat = 0
+        exp = 1893456000
         
         acc_token = sign_jwt({
             "aud": audience,
             "cnf": {"x5t#S256": fingerprint},
             "exp": exp,
-            "iat": int(time.time()),
+            "iat": iat,
             "ip": "127.0.0.1",
             "iss": ISSUER,
             "sub": user_uuid,
@@ -1057,7 +1074,7 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
         
         id_token = sign_jwt({
             "exp": exp,
-            "iat": int(time.time()),
+            "iat": iat,
             "iss": ISSUER,
             "jti": str(uuid.uuid4()),
             "profile": {
@@ -1074,7 +1091,7 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
              "sub": user_uuid,
              "username": username,
              "iss": ISSUER,
-             "iat": int(time.time()),
+             "iat": iat,
              "exp": exp,
              "scope": "hytale:client",
              "aud": audience,
@@ -1247,13 +1264,12 @@ def run_server():
             httpd.server_close()
 
 def main():
+    global current_username
     server_thread = threading.Thread(target=run_server)
     server_thread.daemon = True
     server_thread.start()
 
     time.sleep(1) # Wait for server to start
-
-    current_username = "Player"
     
     try:
         while True:
@@ -1273,6 +1289,7 @@ def main():
                 new_name = input("Enter new username: ").strip()
                 if new_name:
                     current_username = new_name
+                    save_username(current_username)
             elif choice == "2":
                 uuid_str = generate_uuid(current_username)
                 sess_tok, id_tok, _ = generate_game_tokens(current_username, uuid_str)
