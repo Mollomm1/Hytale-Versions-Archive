@@ -830,9 +830,12 @@ def save_skin(data):
     with open(AVATAR_FILE, 'w') as f:
         json.dump(data, f)
 
-def get_uuid(username):
+def get_uuid(uuid):
     # Non-Deterministic UUID from username
     return user_uuid
+
+def generate_uuid():
+    return str(uuid.uuid5(uuid.NAMESPACE_DNS, username.lower()))
 
 def generate_game_tokens(username, user_uuid, audience="hytale-client", scopes=None, scope="hytale:client"):
     if scopes is None: scopes = ["game.session"]
@@ -978,7 +981,7 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
 
     def handle_login(self, data):
         username = data.get("username", "Player")
-        user_uuid = get_uuid(username)
+        user_uuid = get_uuid(uuid)
         
         # Set iat to 0 and exp to Jan 1st 2030
         iat = 0
@@ -1010,7 +1013,7 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
         username, user_uuid = self.get_user_from_token()
         if not username:
              username = "Player"
-             user_uuid = get_uuid(username)
+             user_uuid = get_uuid(uuid)
 
         self._set_headers()
         self.wfile.write(json.dumps({
@@ -1025,7 +1028,7 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
         username, user_uuid = self.get_user_from_token()
         if not username:
              username = "Player"
-             user_uuid = get_uuid(username)
+             user_uuid = get_uuid(uuid)
 
         session_token, identity_token, exp = generate_game_tokens(username, user_uuid)
         
@@ -1063,7 +1066,7 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
         grant = data.get("authorizationGrant")
         fingerprint = data.get("x509Fingerprint")
             
-        user_uuid = get_uuid(current_username)
+        user_uuid = get_uuid(current_uuid)
         audience = "xxxxxxx"
         username = current_username
         
@@ -1123,7 +1126,7 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
         username, user_uuid = self.get_user_from_token()
         if not username:
              username = "Player"
-             user_uuid = get_uuid(username)
+             user_uuid = get_uuid(uuid)
              
         self._set_headers()
         self.wfile.write(json.dumps({
@@ -1134,23 +1137,20 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
             "uuid": user_uuid,
         }).encode())
 
-    # Fix handle_cosmetics
     def handle_cosmetics(self):
         allowed_capes = []
         for pack in CAPE_DEFINITIONS.values():
             allowed_capes.extend(pack)
+        allowed_capes = list(set(allowed_capes))
+        response = {"cape": allowed_capes, **COSMETIC_DEFINITIONS}
         self._set_headers()
-        self.wfile.write(json.dumps({
-            "capes": allowed_capes,
-            "cosmetics": COSMETIC_DEFINITIONS
-        }).encode())
-
+        self.wfile.write(json.dumps(response).encode())
     
     def handle_session_refresh(self, data):
         username, user_uuid = self.get_user_from_token()
         if not username:
              username = "Player"
-             user_uuid = get_uuid(username)
+             user_uuid = get_uuid(uuid)
 
         session_token, identity_token, exp = generate_game_tokens(username, user_uuid, audience="refreshed-session")
 
@@ -1200,7 +1200,7 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
     def handle_public_server(self, data):
         # Emulate server user
         username = "SERVER"
-        user_uuid = get_uuid(username)
+        user_uuid = get_uuid(uuid)
         
         session_token, identity_token, exp = generate_game_tokens(username, user_uuid, audience="hytale-server", scope="hytale:server")
         
@@ -1227,7 +1227,7 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
         # We'll default to "Player" for now if it's not SERVER.
         
         username = "Player"
-        if req_uuid == get_uuid("SERVER"):
+        if req_uuid == get_uuid():
             username = "SERVER"
         
         # If the requester knew the UUID, they probably know the username.
@@ -1288,11 +1288,12 @@ def main():
         while True:
             print("\n=== Hytale Standalone Launcher ===")
             print(f"Current Username: {current_username}")
-            print(f"User UUID: {get_uuid(current_username)}")
+            print(f"User UUID: {get_uuid(current_uuid)}")
             print("1. Set Username")
             print("2. Set UUID")
-            print("3. Launch Game")
-            print("4. Exit")
+            print("3. Generate New UUID")
+            print("4. Launch Game")
+            print("5. Exit")
             
             try:
                 choice = input("Enter choice: ").strip()
@@ -1310,7 +1311,10 @@ def main():
                     current_uuid = new_uuid
                     save_account(current_username, current_uuid)
             elif choice == "3":
-                uuid_str = get_uuid(current_username)
+                new_uuid = generate_uuid()
+                current_uuid = new_uuid
+            elif choice == "4":
+                uuid_str = get_uuid(current_uuid)
                 sess_tok, id_tok, _ = generate_game_tokens(current_username, uuid_str)
                 
                 # Paths relative to current directory
@@ -1364,7 +1368,7 @@ def main():
                          process.wait() # Wait for game to exit
                 except Exception as e:
                     print(f"Error launching game: {e}")
-            elif choice == "4":
+            elif choice == "5":
                 break
             else:
                 print("Invalid choice.")
