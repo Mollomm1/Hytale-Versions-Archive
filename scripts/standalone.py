@@ -42,7 +42,7 @@ def save_account(username, user_uuid):
             "uuid": user_uuid
         }, f, indent=4)
 
-current_username, user_uuid = load_account()
+current_username, current_uuid = load_account()
 WEB_LOG_FILE = os.path.join(LAUNCHER_DIR, "web_server.log")
 CLIENT_LOG_FILE = os.path.join(LAUNCHER_DIR, "hytale_client.log")
 PRIVATE_KEY_PEM = """-----BEGIN PRIVATE KEY-----
@@ -832,10 +832,19 @@ def save_skin(data):
 
 def get_uuid():
     # Non-Deterministic UUID from username
-    return user_uuid
+    return current_uuid
 
-def generate_uuid(username):
-    return str(uuid.uuid5(uuid.NAMESPACE_DNS, username.lower()))
+def generate_uuid():
+    print("Innerfunction Reached")
+    global current_uuid
+    print("globalized current uuid")
+    new_uuid = str(uuid.uuid4())
+    print("new uuid generated and assigned to new_uuid")
+    current_uuid = new_uuid
+    print("current uuid assign to newly genrated uuid")
+    save_account(current_username, new_uuid)
+    print("new uuid saved")
+    return new_uuid
 
 def generate_game_tokens(username, user_uuid, audience="hytale-client", scopes=None, scope="hytale:client"):
     if scopes is None: scopes = ["game.session"]
@@ -1277,7 +1286,7 @@ def run_server():
             httpd.server_close()
 
 def main():
-    global current_username
+    global current_username, current_uuid
     server_thread = threading.Thread(target=run_server)
     server_thread.daemon = True
     server_thread.start()
@@ -1288,7 +1297,7 @@ def main():
         while True:
             print("\n=== Hytale Standalone Launcher ===")
             print(f"Current Username: {current_username}")
-            print(f"User UUID: {get_uuid()}")
+            print(f"User UUID: {current_uuid}")
             print("1. Set Username")
             print("2. Set UUID")
             print("3. Generate New UUID")
@@ -1312,7 +1321,7 @@ def main():
                     current_uuid = new_uuid
                     save_account(current_username, current_uuid)
             elif choice == "3":
-                new_uuid = generate_uuid(username)
+                new_uuid = generate_uuid()
                 current_uuid = new_uuid
                 save_account(current_username, current_uuid)
             elif choice == "4":
