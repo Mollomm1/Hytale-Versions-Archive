@@ -1304,6 +1304,7 @@ def main():
                 new_name = input("Enter new username: ").strip()
                 if new_name:
                     current_username = new_name
+                    current_uuid = get_uuid()
                     save_account(current_username, current_uuid)
             elif choice == "2":
                 new_uuid = input("Enter new uuid: ")
@@ -1313,6 +1314,7 @@ def main():
             elif choice == "3":
                 new_uuid = generate_uuid(username)
                 current_uuid = new_uuid
+                save_account(current_username, current_uuid)
             elif choice == "4":
                 uuid_str = get_uuid()
                 sess_tok, id_tok, _ = generate_game_tokens(current_username, uuid_str)
