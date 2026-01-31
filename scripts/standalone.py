@@ -830,11 +830,11 @@ def save_skin(data):
     with open(AVATAR_FILE, 'w') as f:
         json.dump(data, f)
 
-def get_uuid(uuid):
+def get_uuid():
     # Non-Deterministic UUID from username
     return user_uuid
 
-def generate_uuid():
+def generate_uuid(username):
     return str(uuid.uuid5(uuid.NAMESPACE_DNS, username.lower()))
 
 def generate_game_tokens(username, user_uuid, audience="hytale-client", scopes=None, scope="hytale:client"):
@@ -981,7 +981,7 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
 
     def handle_login(self, data):
         username = data.get("username", "Player")
-        user_uuid = get_uuid(uuid)
+        user_uuid = get_uuid()
         
         # Set iat to 0 and exp to Jan 1st 2030
         iat = 0
@@ -1013,7 +1013,7 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
         username, user_uuid = self.get_user_from_token()
         if not username:
              username = "Player"
-             user_uuid = get_uuid(uuid)
+             user_uuid = get_uuid()
 
         self._set_headers()
         self.wfile.write(json.dumps({
@@ -1028,7 +1028,7 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
         username, user_uuid = self.get_user_from_token()
         if not username:
              username = "Player"
-             user_uuid = get_uuid(uuid)
+             user_uuid = get_uuid()
 
         session_token, identity_token, exp = generate_game_tokens(username, user_uuid)
         
@@ -1066,7 +1066,7 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
         grant = data.get("authorizationGrant")
         fingerprint = data.get("x509Fingerprint")
             
-        user_uuid = get_uuid(current_uuid)
+        user_uuid = get_uuid()
         audience = "xxxxxxx"
         username = current_username
         
@@ -1126,7 +1126,7 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
         username, user_uuid = self.get_user_from_token()
         if not username:
              username = "Player"
-             user_uuid = get_uuid(uuid)
+             user_uuid = get_uuid()
              
         self._set_headers()
         self.wfile.write(json.dumps({
@@ -1150,7 +1150,7 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
         username, user_uuid = self.get_user_from_token()
         if not username:
              username = "Player"
-             user_uuid = get_uuid(uuid)
+             user_uuid = get_uuid()
 
         session_token, identity_token, exp = generate_game_tokens(username, user_uuid, audience="refreshed-session")
 
@@ -1200,7 +1200,7 @@ class HytaleHandler(http.server.BaseHTTPRequestHandler):
     def handle_public_server(self, data):
         # Emulate server user
         username = "SERVER"
-        user_uuid = get_uuid(uuid)
+        user_uuid = get_uuid()
         
         session_token, identity_token, exp = generate_game_tokens(username, user_uuid, audience="hytale-server", scope="hytale:server")
         
@@ -1288,7 +1288,7 @@ def main():
         while True:
             print("\n=== Hytale Standalone Launcher ===")
             print(f"Current Username: {current_username}")
-            print(f"User UUID: {get_uuid(current_uuid)}")
+            print(f"User UUID: {get_uuid()}")
             print("1. Set Username")
             print("2. Set UUID")
             print("3. Generate New UUID")
@@ -1311,10 +1311,10 @@ def main():
                     current_uuid = new_uuid
                     save_account(current_username, current_uuid)
             elif choice == "3":
-                new_uuid = generate_uuid()
+                new_uuid = generate_uuid(username)
                 current_uuid = new_uuid
             elif choice == "4":
-                uuid_str = get_uuid(current_uuid)
+                uuid_str = get_uuid()
                 sess_tok, id_tok, _ = generate_game_tokens(current_username, uuid_str)
                 
                 # Paths relative to current directory
