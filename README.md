@@ -1,3 +1,5 @@
+> i won't update/publish my hytale emulator and archived repacked releases publicly from now.
+
 # Hytale-Versions-Archive
 
 Personal Hytale Linux and Windows Versions Archive from first release to current one including pre-release channel.
